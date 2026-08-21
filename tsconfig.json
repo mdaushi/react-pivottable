@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "jsx": "react",
+    "strict": true,
+    "esModuleInterop": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "lib": ["es6", "dom"]
+  },
+  "include": ["types/**/*.d.ts"],
+  "exclude": ["node_modules"]
+}

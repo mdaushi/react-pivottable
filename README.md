@@ -45,7 +45,7 @@ A [live demo can be found here](https://react-pivottable.js.org/).
 Installation is via NPM and has a peer dependency on React:
 
 ```
-npm install --save react-pivottable react react-dom
+npm install --save @mdaushi/react-pivottable react react-dom
 ```
 
 Basic usage is as follows. Note that `PivotTableUI` is a "dumb component" that
@@ -54,8 +54,8 @@ maintains essentially no state of its own.
 ```js
 import React from 'react';
 import ReactDOM from 'react-dom';
-import PivotTableUI from 'react-pivottable/PivotTableUI';
-import 'react-pivottable/pivottable.css';
+import PivotTableUI from '@mdaushi/react-pivottable/PivotTableUI';
+import '@mdaushi/react-pivottable/pivottable.css';
 
 // see documentation for supported input formats
 const data = [['attribute', 'attribute2'], ['value1', 'value2']];
@@ -80,6 +80,51 @@ class App extends React.Component {
 ReactDOM.render(<App />, document.body);
 ```
 
+### With hierarchical grouping & subtotals
+
+This fork adds `grouping`, `subtotals`, and `subtotalLabel` props that work
+with the Table renderers:
+
+```js
+import PivotTableUI from '@mdaushi/react-pivottable/PivotTableUI';
+import '@mdaushi/react-pivottable/pivottable.css';
+
+const data = [
+    ['Country', 'City', 'Sales'],
+    ['USA', 'New York', 100],
+    ['USA', 'Los Angeles', 200],
+    ['Canada', 'Toronto', 150],
+    ['Canada', 'Vancouver', 120],
+];
+
+class App extends React.Component {
+    constructor(props) {
+        super(props);
+        this.state = props;
+    }
+
+    render() {
+        return (
+            <PivotTableUI
+                data={data}
+                rows={['Country', 'City']}
+                aggregatorName="Sum"
+                vals={['Sales']}
+                grouping={true}
+                subtotals={true}
+                subtotalLabel={value => value + ' Total'}
+                onChange={s => this.setState(s)}
+                {...this.state}
+            />
+        );
+    }
+}
+```
+
+- `grouping={true}` enables collapsible parent/child hierarchy
+- `subtotals={true}` adds subtotal rows after each expanded group
+- `subtotalLabel` accepts a string or `(value, level, key) => string`
+
 ### Drag'n'drop UI with Plotly charts as well as Table output
 
 The Plotly `react-plotly.js` component can be passed in via dependency
@@ -91,18 +136,18 @@ in order to successfully bundle `plotly.js`. See below for how to avoid having
 to bundle `plotly.js`.
 
 ```
-npm install --save react-pivottable react-plotly.js plotly.js react react-dom
+npm install --save @mdaushi/react-pivottable react-plotly.js plotly.js react react-dom
 ```
 
 To add the Plotly renderers to your app, you can use the following pattern:
 
 ```js
 import React from 'react';
-import PivotTableUI from 'react-pivottable/PivotTableUI';
-import 'react-pivottable/pivottable.css';
-import TableRenderers from 'react-pivottable/TableRenderers';
+import PivotTableUI from '@mdaushi/react-pivottable/PivotTableUI';
+import '@mdaushi/react-pivottable/pivottable.css';
+import TableRenderers from '@mdaushi/react-pivottable/TableRenderers';
 import Plot from 'react-plotly.js';
-import createPlotlyRenderers from 'react-pivottable/PlotlyRenderers';
+import createPlotlyRenderers from '@mdaushi/react-pivottable/PlotlyRenderers';
 
 // create Plotly renderers via dependency injection
 const PlotlyRenderers = createPlotlyRenderers(Plot);
@@ -139,11 +184,11 @@ peer-dependcy warning and handle the dependency injection like this:
 
 ```js
 import React from 'react';
-import PivotTableUI from 'react-pivottable/PivotTableUI';
-import 'react-pivottable/pivottable.css';
-import TableRenderers from 'react-pivottable/TableRenderers';
+import PivotTableUI from '@mdaushi/react-pivottable/PivotTableUI';
+import '@mdaushi/react-pivottable/pivottable.css';
+import TableRenderers from '@mdaushi/react-pivottable/TableRenderers';
 import createPlotlyComponent from 'react-plotly.js/factory';
-import createPlotlyRenderers from 'react-pivottable/PlotlyRenderers';
+import createPlotlyRenderers from '@mdaushi/react-pivottable/PlotlyRenderers';
 
 // create Plotly React component via dependency injection
 const Plot = createPlotlyComponent(window.Plotly);
@@ -175,6 +220,59 @@ class App extends React.Component {
 ReactDOM.render(<App />, document.body);
 ```
 
+### TypeScript support
+
+This package ships with built-in type definitions. No need to install
+`@types/@mdaushi/react-pivottable` separately.
+
+```typescript
+import PivotTableUI, {PivotTableUIProps} from '@mdaushi/react-pivottable';
+import TableRenderers from '@mdaushi/react-pivottable/TableRenderers';
+import {PivotData, sortAs} from '@mdaushi/react-pivottable/Utilities';
+
+const data: (string | number)[][] = [
+    ['Country', 'City', 'Sales'],
+    ['USA', 'New York', 100],
+    ['USA', 'Los Angeles', 200],
+];
+
+class App extends React.Component<{}, Partial<PivotTableUIProps>> {
+    state: Partial<PivotTableUIProps> = {
+        data,
+        rows: ['Country', 'City'],
+        aggregatorName: 'Sum',
+        vals: ['Sales'],
+        grouping: true,
+        subtotals: true,
+        subtotalLabel: (value: string) => value + ' Total',
+    };
+
+    render() {
+        return (
+            <PivotTableUI
+                {...this.state}
+                onChange={s => this.setState(s)}
+            />
+        );
+    }
+}
+```
+
+Imported types can be used directly:
+
+```typescript
+import {
+    PivotData,
+    PivotDataProps,
+    Data,
+    Record as PivotRecord,
+    Aggregator,
+    SubtotalLabel,
+} from '@mdaushi/react-pivottable/Utilities';
+
+import {PivotTableUIProps, PivotTableProps} from '@mdaushi/react-pivottable/PivotTableUI';
+```
+
 ## Properties and layered architecture
 
 * `<PivotTableUI {...props} />`
@@ -182,7 +280,7 @@ ReactDOM.render(<App />, document.body);
     * `<Renderer {...props} />`
       * `PivotData(props)`
 
-The interactive component provided by `react-pivottable` is `PivotTableUI`, but
+The interactive component provided by `@mdaushi/react-pivottable` is `PivotTableUI`, but
 output rendering is delegated to the non-interactive `PivotTable` component,
 which accepts a subset of its properties. `PivotTable` can be invoked directly
 and is useful for outputting non-interactive saved snapshots of `PivotTableUI`

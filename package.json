@@ -3,6 +3,7 @@
   "version": "0.12.0",
   "description": "A React-based pivot table",
   "main": "PivotTableUI.js",
+  "types": "types/index.d.ts",
   "files": [
     "PivotTable.js",
     "PivotTableUI.js",
@@ -14,7 +15,8 @@
     "PlotlyRenderers.js.map",
     "TableRenderers.js.map",
     "Utilities.js.map",
-    "pivottable.css"
+    "pivottable.css",
+    "types"
   ],
   "scripts": {
     "start": "webpack-dev-server",
