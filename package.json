@@ -1,5 +1,5 @@
 {
-  "name": "react-pivottable",
+  "name": "@mdaushi/react-pivottable",
   "version": "0.12.0",
   "description": "A React-based pivot table",
   "main": "PivotTableUI.js",
@@ -26,7 +26,7 @@
     "test": "npm run test:eslint && npm run test:prettier && npm run test:jest",
     "clean": "rm -rf __tests__ PivotTable.js* PivotTableUI.js* PlotlyRenderers.js* TableRenderers.js* Utilities.js* pivottable.css",
     "build": "npm run clean && cp src/pivottable.css . && babel src --out-dir=. --source-maps --presets=env,react --plugins babel-plugin-add-module-exports",
-    "doPublish": "npm run build && npm publish",
+    "doPublish": "npm run build && npm publish --access public",
     "postpublish": "npm run clean",
     "deploy": "webpack -p && mv bundle.js examples && cd examples && git init && git add . && git commit -m build && git push --force git@github.com/mdaushi/react-pivottable.git master:gh-pages && rm -rf .git bundle.js"
   },

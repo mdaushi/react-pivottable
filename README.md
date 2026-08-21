@@ -1,16 +1,31 @@
-# react-pivottable
+# react-pivottable (Fork)
 
-`react-pivottable` is a React-based pivot table library with drag'n'drop
-functionality. It is a React port of the jQuery-based
+> **Fork Notice:** This is a community fork of
+> [react-pivottable](https://github.com/plotly/react-pivottable) by
+> [Plotly](https://plot.ly). It adds extra features on top of the original
+> library (hierarchical grouping, subtotals, custom subtotal labels). All
+> credit for the original work goes to
+> [Nicolas Kruchten](https://github.com/nicolaskruchten) and the Plotly team.
+
+The original `react-pivottable` is a React-based pivot table library with
+drag'n'drop functionality. It is a React port of the jQuery-based
 [PivotTable.js](https://pivottable.js.org/) by the same author.
 
-`react-pivottable` is part of Plotly's [React Component Suite](https://plot.ly/products/react/) for building data visualization Web apps and products.
+## What's different in this fork?
 
-<div align="center">
-  <a href="https://dash.plotly.com/project-maintenance">
-    <img src="https://dash.plotly.com/assets/images/maintained-by-plotly.png" width="400px" alt="Maintained by Plotly">
-  </a>
-</div>
+This fork adds the following features to the Table renderers:
+
+- **Hierarchical grouping** (`grouping` prop) — collapsible parent/child rows
+  and columns with expand/collapse toggle icons
+- **Expand all / collapse all** — level-header toggle to expand or collapse
+  all groups at a given level at once
+- **Subtotals** (`subtotals` prop) — subtotal rows/columns after each expanded
+  group showing aggregated values across all children
+- **Custom subtotal labels** (`subtotalLabel` prop) — string or function to
+  dynamically generate subtotal label text
+
+See the [Hierarchical Grouping](#hierarchical-grouping-table-renderers)
+section below for usage details.
 
 ## What does it do & where is the demo?
 
