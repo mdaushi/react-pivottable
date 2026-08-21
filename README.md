@@ -448,8 +448,11 @@ The `scripts/publish.sh` script automates the full release workflow:
 
 - **npm**: must be logged in (`npm login`)
 - **GitHub auth**: either install [gh CLI](https://cli.github.com/) and run
-  `gh auth login`, or set a `GITHUB_TOKEN` env var (create at
-  https://github.com/settings/tokens with `repo` scope)
+  `gh auth login`, **or** the script will prompt you to paste a token
+  (input is hidden). Create a token at
+  https://github.com/settings/tokens with `repo` scope.
+  The token is only kept in memory for the duration of the script and
+  never saved to disk.
 
 ### Usage
 
