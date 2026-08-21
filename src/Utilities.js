@@ -800,6 +800,7 @@ PivotData.defaultProps = {
   colOrder: 'key_a_to_z',
   derivedAttributes: {},
   grouping: false,
+  subtotals: false,
   expandedRowGroups: {},
   expandedColGroups: {},
 };
@@ -818,6 +819,7 @@ PivotData.propTypes = {
   ]),
   derivedAttributes: PropTypes.objectOf(PropTypes.func),
   grouping: PropTypes.bool,
+  subtotals: PropTypes.bool,
   expandedRowGroups: PropTypes.objectOf(PropTypes.bool),
   expandedColGroups: PropTypes.objectOf(PropTypes.bool),
   rowOrder: PropTypes.oneOf(['key_a_to_z', 'value_a_to_z', 'value_z_to_a']),

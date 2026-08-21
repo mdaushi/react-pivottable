@@ -194,6 +194,7 @@ indication of which layer consumes each, from the bottom up:
 | `PivotData`    | `colOrder` <br /> string                         | `"key_a_to_z"`                | the order in which column data is provided to the renderer, must be one of `"key_a_to_z"`, `"value_a_to_z"`, `"value_z_to_a"`, ordering by value orders by column total                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `PivotData`    | `derivedAttributes` <br /> object of functions   | `{}`                          | defines derived attributes (see [original PivotTable.js documentation](https://github.com/nicolaskruchten/pivottable/wiki/Derived-Attributes))                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `PivotData`    | `grouping` <br /> boolean                        | `false`                       | enables hierarchical expand/collapse grouping in the Table renderers. When `true`, parent row/column groups are collapsed by default and can be expanded by clicking the toggle icon.                                                                                                                                                                                                                                                                                                                                                                                                             |
+| `PivotData`    | `subtotals` <br /> boolean                       | `false`                       | when `true` (requires `grouping`), displays subtotal rows/columns after each expanded group's children. Subtotals show aggregated values computed across all children of that group.                                                                                                                                                                                                                                                                                                                                                                                              |
 | `PivotData`    | `expandedRowGroups` <br /> object of booleans    | `{}`                          | tracks which row groups have been expanded. Keys are flat partial row keys. Managed automatically via `onChange` when `grouping` is enabled.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `PivotData`    | `expandedColGroups` <br /> object of booleans    | `{}`                          | tracks which column groups have been expanded. Keys are flat partial column keys. Managed automatically via `onChange` when `grouping` is enabled.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `Renderer`     | `<any>`                                          | (none, optional)              | Renderers may accept any additional properties                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -219,11 +220,32 @@ The expand/collapse state is managed via `expandedRowGroups` /
 `expandedColGroups` and flows through `onChange` like all other `PivotTableUI`
 state, so it persists across re-renders.
 
+Axis-label headers also have a ▶/▼ toggle that expands or collapses **all** groups
+at that level at once.
+
+#### Subtotals
+
+When `subtotals` is set to `true` (along with `grouping`), a **Subtotal** row
+(or column) is inserted after the last child of each expanded group, showing
+the aggregated value across all children of that group. Collapsed groups do
+not get subtotals since their summary already shows the aggregated value.
+
 ```js
 <PivotTableUI
     data={data}
     onChange={s => this.setState(s)}
     grouping={true}
+    subtotals={true}
+    {...this.state}
+/>
+```
+
+```js
+<PivotTableUI
+    data={data}
+    onChange={s => this.setState(s)}
+    grouping={true}
+    subtotals={true}
     {...this.state}
 />
 ```

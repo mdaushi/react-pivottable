@@ -4,16 +4,24 @@ import {PivotData} from './Utilities';
 
 // Build display items (rows or cols) considering expanded/collapsed groups.
 // When grouping is enabled, parent groups that are not expanded are collapsed
-// into a single summary item with a partial key.
-function buildDisplayItems(keys, attrs, expandedGroups, grouping) {
+// into a single summary item with a partial key. When subtotals are enabled,
+// expanded groups get a subtotal item appended after their last child.
+function buildDisplayItems(
+  keys,
+  attrs,
+  expandedGroups,
+  grouping,
+  showSubtotals
+) {
   if (!grouping || attrs.length <= 1) {
-    return keys.map(key => ({key, isSummary: false}));
+    return keys.map(key => ({key, isSummary: false, isSubtotal: false}));
   }
 
   const displayItems = [];
   const seenCollapsed = new Set();
 
-  for (const key of keys) {
+  for (let i = 0; i < keys.length; i++) {
+    const key = keys[i];
     let collapsedLevel = -1;
     for (let j = 0; j < key.length - 1; j++) {
       const flatKey = key.slice(0, j + 1).join(String.fromCharCode(0));
@@ -28,10 +36,45 @@ function buildDisplayItems(keys, attrs, expandedGroups, grouping) {
       const flatKey = partialKey.join(String.fromCharCode(0));
       if (!seenCollapsed.has(flatKey)) {
         seenCollapsed.add(flatKey);
-        displayItems.push({key: partialKey, isSummary: true});
+        displayItems.push({
+          key: partialKey,
+          isSummary: true,
+          isSubtotal: false,
+        });
       }
     } else {
-      displayItems.push({key, isSummary: false});
+      displayItems.push({key, isSummary: false, isSubtotal: false});
+    }
+
+    // Insert subtotals after the last child of each expanded group.
+    // Walk from deepest expanded level up to shallowest so that inner
+    // subtotals are pushed before outer ones.
+    if (showSubtotals) {
+      for (let j = key.length - 2; j >= 0; j--) {
+        const flatKey = key.slice(0, j + 1).join(String.fromCharCode(0));
+        if (!(flatKey in expandedGroups)) {
+          break;
+        }
+        const nextKey = keys[i + 1];
+        let prefixChanges = true;
+        if (nextKey) {
+          prefixChanges = false;
+          for (let x = 0; x <= j; x++) {
+            if (nextKey.length <= x || nextKey[x] !== key[x]) {
+              prefixChanges = true;
+              break;
+            }
+          }
+        }
+        if (prefixChanges) {
+          const subtotalKey = key.slice(0, j + 1);
+          displayItems.push({
+            key: subtotalKey,
+            isSummary: false,
+            isSubtotal: true,
+          });
+        }
+      }
     }
   }
 
@@ -39,17 +82,27 @@ function buildDisplayItems(keys, attrs, expandedGroups, grouping) {
 }
 
 // Compute span size for display items, handling varying key lengths
-// (summary items have shorter keys than regular items).
+// (summary and subtotal items have shorter keys than regular items).
+// Subtotal items at their own level always span 1 and break the span of
+// preceding regular items, but are spanned by higher-level headers.
 function displaySpanSize(displayItems, i, j) {
   const item = displayItems[i];
   if (j >= item.key.length) {
     return -1;
   }
 
+  const isSubtotalAtThisLevel = item.isSubtotal && j === item.key.length - 1;
+
   // Check if previous item covers this cell
   if (i > 0) {
     const prev = displayItems[i - 1];
-    if (j < prev.key.length) {
+    const isPrevSubtotalAtThisLevel =
+      prev.isSubtotal && j === prev.key.length - 1;
+    if (
+      !isSubtotalAtThisLevel &&
+      !isPrevSubtotalAtThisLevel &&
+      j < prev.key.length
+    ) {
       let same = true;
       for (let x = 0; x <= j; x++) {
         if (prev.key[x] !== item.key[x]) {
@@ -63,11 +116,20 @@ function displaySpanSize(displayItems, i, j) {
     }
   }
 
+  // Subtotal at its own level always spans 1
+  if (isSubtotalAtThisLevel) {
+    return 1;
+  }
+
   // Count consecutive items with same value at level j
   let len = 0;
   while (i + len < displayItems.length) {
     const next = displayItems[i + len];
     if (j >= next.key.length) {
+      break;
+    }
+    // Stop at subtotal items at their own level
+    if (next.isSubtotal && j === next.key.length - 1) {
       break;
     }
     let same = true;
@@ -124,6 +186,7 @@ function makeRenderer(opts = {}) {
       const grandTotalAggregator = pivotData.getAggregator([], []);
 
       const grouping = this.props.grouping;
+      const subtotals = this.props.subtotals;
       const expandedRowGroups = this.props.expandedRowGroups || {};
       const expandedColGroups = this.props.expandedColGroups || {};
       const onRowGroupToggle = this.props.onRowGroupToggle;
@@ -135,13 +198,15 @@ function makeRenderer(opts = {}) {
         rowKeys,
         rowAttrs,
         expandedRowGroups,
-        grouping
+        grouping,
+        subtotals
       );
       const displayCols = buildDisplayItems(
         colKeys,
         colAttrs,
         expandedColGroups,
-        grouping
+        grouping,
+        subtotals
       );
 
       let valueCellColors = () => {};
@@ -252,18 +317,24 @@ function makeRenderer(opts = {}) {
                       return null;
                     }
                     const isLastVisible = j === col.key.length - 1;
+                    const isSubtotalLabel = col.isSubtotal && isLastVisible;
                     const rowSpan = isLastVisible
                       ? colAttrs.length - j + (rowAttrs.length !== 0 ? 1 : 0)
                       : 1;
                     const canToggle =
-                      j < colAttrs.length - 1 && Boolean(onColGroupToggle);
+                      j < colAttrs.length - 1 &&
+                      Boolean(onColGroupToggle) &&
+                      !col.isSubtotal;
                     const flatKey = col.key
                       .slice(0, j + 1)
                       .join(String.fromCharCode(0));
                     const isExpanded = flatKey in expandedColGroups;
                     return (
                       <th
-                        className="pvtColLabel"
+                        className={
+                          'pvtColLabel' +
+                          (isSubtotalLabel ? ' pvtSubtotal' : '')
+                        }
                         key={`colKey${i}`}
                         colSpan={x}
                         rowSpan={rowSpan}
@@ -279,7 +350,7 @@ function makeRenderer(opts = {}) {
                             {isExpanded ? '▼' : '▶'}
                           </span>
                         )}
-                        {col.key[j]}
+                        {isSubtotalLabel ? 'Subtotal' : col.key[j]}
                       </th>
                     );
                   })}
@@ -337,9 +408,10 @@ function makeRenderer(opts = {}) {
           <tbody>
             {displayRows.map(function(displayRow, i) {
               const rowKey = displayRow.key;
-              const totalAggregator = displayRow.isSummary
-                ? pivotData.getAggregatorForPartialKeys(rowKey, [])
-                : pivotData.getAggregator(rowKey, []);
+              const totalAggregator =
+                displayRow.isSummary || displayRow.isSubtotal
+                  ? pivotData.getAggregatorForPartialKeys(rowKey, [])
+                  : pivotData.getAggregator(rowKey, []);
               return (
                 <tr key={`rowKeyRow${i}`}>
                   {rowAttrs.map(function(r, j) {
@@ -351,11 +423,15 @@ function makeRenderer(opts = {}) {
                       return null;
                     }
                     const isLastVisible = j === rowKey.length - 1;
+                    const isSubtotalLabel =
+                      displayRow.isSubtotal && isLastVisible;
                     const colSpan = isLastVisible
                       ? rowAttrs.length - j + (colAttrs.length !== 0 ? 1 : 0)
                       : 1;
                     const canToggle =
-                      j < rowAttrs.length - 1 && Boolean(onRowGroupToggle);
+                      j < rowAttrs.length - 1 &&
+                      Boolean(onRowGroupToggle) &&
+                      !displayRow.isSubtotal;
                     const flatKey = rowKey
                       .slice(0, j + 1)
                       .join(String.fromCharCode(0));
@@ -363,7 +439,10 @@ function makeRenderer(opts = {}) {
                     return (
                       <th
                         key={`rowKeyLabel${i}-${j}`}
-                        className="pvtRowLabel"
+                        className={
+                          'pvtRowLabel' +
+                          (isSubtotalLabel ? ' pvtSubtotal' : '')
+                        }
                         rowSpan={x}
                         colSpan={colSpan}
                       >
@@ -378,18 +457,26 @@ function makeRenderer(opts = {}) {
                             {isExpanded ? '▼' : '▶'}
                           </span>
                         )}
-                        {rowKey[j]}
+                        {isSubtotalLabel ? 'Subtotal' : rowKey[j]}
                       </th>
                     );
                   })}
                   {displayCols.map(function(col, j) {
                     const aggregator =
-                      displayRow.isSummary || col.isSummary
+                      displayRow.isSummary ||
+                      col.isSummary ||
+                      displayRow.isSubtotal ||
+                      col.isSubtotal
                         ? pivotData.getAggregatorForPartialKeys(rowKey, col.key)
                         : pivotData.getAggregator(rowKey, col.key);
                     return (
                       <td
-                        className="pvtVal"
+                        className={
+                          'pvtVal' +
+                          (displayRow.isSubtotal || col.isSubtotal
+                            ? ' pvtSubtotal'
+                            : '')
+                        }
                         key={`pvtVal${i}-${j}`}
                         onClick={
                           getClickHandler &&
@@ -406,7 +493,9 @@ function makeRenderer(opts = {}) {
                     );
                   })}
                   <td
-                    className="pvtTotal"
+                    className={
+                      'pvtTotal' + (displayRow.isSubtotal ? ' pvtSubtotal' : '')
+                    }
                     onClick={
                       getClickHandler &&
                       getClickHandler(totalAggregator.value(), rowKey, [null])
@@ -428,12 +517,15 @@ function makeRenderer(opts = {}) {
               </th>
 
               {displayCols.map(function(col, i) {
-                const totalAggregator = col.isSummary
-                  ? pivotData.getAggregatorForPartialKeys([], col.key)
-                  : pivotData.getAggregator([], col.key);
+                const totalAggregator =
+                  col.isSummary || col.isSubtotal
+                    ? pivotData.getAggregatorForPartialKeys([], col.key)
+                    : pivotData.getAggregator([], col.key);
                 return (
                   <td
-                    className="pvtTotal"
+                    className={
+                      'pvtTotal' + (col.isSubtotal ? ' pvtSubtotal' : '')
+                    }
                     key={`total${i}`}
                     onClick={
                       getClickHandler &&
