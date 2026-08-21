@@ -801,6 +801,7 @@ PivotData.defaultProps = {
   derivedAttributes: {},
   grouping: false,
   subtotals: false,
+  subtotalLabel: 'Subtotal',
   expandedRowGroups: {},
   expandedColGroups: {},
 };
@@ -820,6 +821,7 @@ PivotData.propTypes = {
   derivedAttributes: PropTypes.objectOf(PropTypes.func),
   grouping: PropTypes.bool,
   subtotals: PropTypes.bool,
+  subtotalLabel: PropTypes.oneOfType([PropTypes.string, PropTypes.func]),
   expandedRowGroups: PropTypes.objectOf(PropTypes.bool),
   expandedColGroups: PropTypes.objectOf(PropTypes.bool),
   rowOrder: PropTypes.oneOf(['key_a_to_z', 'value_a_to_z', 'value_z_to_a']),

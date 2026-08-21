@@ -47,13 +47,20 @@ function buildDisplayItems(
     }
 
     // Insert subtotals after the last child of each expanded group.
-    // Walk from deepest expanded level up to shallowest so that inner
-    // subtotals are pushed before outer ones.
+    // Walk from deepest level up to shallowest so that inner
+    // subtotals are pushed before outer ones. Skip levels that are not
+    // expanded (they have their own summary), but continue checking
+    // outer levels which may still need a subtotal.
     if (showSubtotals) {
       for (let j = key.length - 2; j >= 0; j--) {
+        // Skip levels deeper than the collapsed level — their parent
+        // group is collapsed so no subtotal should appear there.
+        if (collapsedLevel >= 0 && j > collapsedLevel) {
+          continue;
+        }
         const flatKey = key.slice(0, j + 1).join(String.fromCharCode(0));
         if (!(flatKey in expandedGroups)) {
-          break;
+          continue;
         }
         const nextKey = keys[i + 1];
         let prefixChanges = true;
@@ -187,6 +194,7 @@ function makeRenderer(opts = {}) {
 
       const grouping = this.props.grouping;
       const subtotals = this.props.subtotals;
+      const subtotalLabel = this.props.subtotalLabel;
       const expandedRowGroups = this.props.expandedRowGroups || {};
       const expandedColGroups = this.props.expandedColGroups || {};
       const onRowGroupToggle = this.props.onRowGroupToggle;
@@ -350,7 +358,11 @@ function makeRenderer(opts = {}) {
                             {isExpanded ? '▼' : '▶'}
                           </span>
                         )}
-                        {isSubtotalLabel ? 'Subtotal' : col.key[j]}
+                        {isSubtotalLabel
+                          ? typeof subtotalLabel === 'function'
+                            ? subtotalLabel(col.key[j], j, col.key)
+                            : subtotalLabel
+                          : col.key[j]}
                       </th>
                     );
                   })}
@@ -457,7 +469,11 @@ function makeRenderer(opts = {}) {
                             {isExpanded ? '▼' : '▶'}
                           </span>
                         )}
-                        {isSubtotalLabel ? 'Subtotal' : rowKey[j]}
+                        {isSubtotalLabel
+                          ? typeof subtotalLabel === 'function'
+                            ? subtotalLabel(rowKey[j], j, rowKey)
+                            : subtotalLabel
+                          : rowKey[j]}
                       </th>
                     );
                   })}
@@ -617,3 +633,5 @@ export default {
   'Table Row Heatmap': makeRenderer({heatmapMode: 'row'}),
   'Exportable TSV': TSVExportRenderer,
 };
+
+export {buildDisplayItems};

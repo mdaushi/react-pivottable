@@ -51,6 +51,7 @@ export default class App extends React.Component {
         rendererName: 'Table',
         grouping: true,
         subtotals: true,
+        subtotalLabel: value => value + ' Total',
         sorters: {
           Meal: sortAs(['Lunch', 'Dinner']),
           'Day of Week': sortAs(['Thursday', 'Friday', 'Saturday', 'Sunday']),

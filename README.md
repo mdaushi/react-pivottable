@@ -195,6 +195,7 @@ indication of which layer consumes each, from the bottom up:
 | `PivotData`    | `derivedAttributes` <br /> object of functions   | `{}`                          | defines derived attributes (see [original PivotTable.js documentation](https://github.com/nicolaskruchten/pivottable/wiki/Derived-Attributes))                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `PivotData`    | `grouping` <br /> boolean                        | `false`                       | enables hierarchical expand/collapse grouping in the Table renderers. When `true`, parent row/column groups are collapsed by default and can be expanded by clicking the toggle icon.                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `PivotData`    | `subtotals` <br /> boolean                       | `false`                       | when `true` (requires `grouping`), displays subtotal rows/columns after each expanded group's children. Subtotals show aggregated values computed across all children of that group.                                                                                                                                                                                                                                                                                                                                                                                              |
+| `PivotData`    | `subtotalLabel` <br /> string or function        | `"Subtotal"`                  | label text for subtotal rows/columns. If a string, used as-is. If a function, called with `(value, level, key)` where `value` is the parent group value, `level` is the 0-indexed depth, and `key` is the full partial key array. e.g. `(value) => value + ' Total'` produces `"Thursday Total"`. |
 | `PivotData`    | `expandedRowGroups` <br /> object of booleans    | `{}`                          | tracks which row groups have been expanded. Keys are flat partial row keys. Managed automatically via `onChange` when `grouping` is enabled.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `PivotData`    | `expandedColGroups` <br /> object of booleans    | `{}`                          | tracks which column groups have been expanded. Keys are flat partial column keys. Managed automatically via `onChange` when `grouping` is enabled.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `Renderer`     | `<any>`                                          | (none, optional)              | Renderers may accept any additional properties                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
@@ -230,15 +231,9 @@ When `subtotals` is set to `true` (along with `grouping`), a **Subtotal** row
 the aggregated value across all children of that group. Collapsed groups do
 not get subtotals since their summary already shows the aggregated value.
 
-```js
-<PivotTableUI
-    data={data}
-    onChange={s => this.setState(s)}
-    grouping={true}
-    subtotals={true}
-    {...this.state}
-/>
-```
+By default the subtotal label is the string `"Subtotal"`. You can customize
+it with the `subtotalLabel` prop — either a static string or a function that
+receives `(value, level, key)` and returns a dynamic label:
 
 ```js
 <PivotTableUI
@@ -246,9 +241,13 @@ not get subtotals since their summary already shows the aggregated value.
     onChange={s => this.setState(s)}
     grouping={true}
     subtotals={true}
+    subtotalLabel={(value) => value + ' Total'}
     {...this.state}
 />
 ```
+
+With the above, a subtotal under `Thursday` would show `"Thursday Total"`
+instead of `"Subtotal"`.
 
 **Note:** This feature is currently supported only by the Table renderers
 (`Table`, `Table Heatmap`, `Table Row Heatmap`, `Table Col Heatmap`).
