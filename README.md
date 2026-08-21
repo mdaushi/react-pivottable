@@ -429,3 +429,56 @@ const data = function(callback) {
     //...
 };
 ```
+
+## Publishing & Releasing
+
+The `scripts/publish.sh` script automates the full release workflow:
+
+1. Run tests (eslint + prettier + jest)
+2. Bump version (`patch` / `minor` / `major` / custom)
+3. Build the package with Babel
+4. Publish to npm (`--access public`)
+5. Clean build artifacts
+6. Commit + tag + push to GitHub
+7. Create a GitHub Release with auto-generated notes
+8. Build demo with webpack
+9. Deploy demo to GitHub Pages (`gh-pages` branch)
+
+### Prerequisites
+
+- **npm**: must be logged in (`npm login`)
+- **GitHub auth**: either install [gh CLI](https://cli.github.com/) and run
+  `gh auth login`, or set a `GITHUB_TOKEN` env var (create at
+  https://github.com/settings/tokens with `repo` scope)
+
+### Usage
+
+```sh
+# Interactive version bump
+npm run release
+
+# Or specify bump type directly
+./scripts/publish.sh patch
+./scripts/publish.sh minor
+./scripts/publish.sh 1.0.0
+
+# Skip GitHub Pages deploy
+./scripts/publish.sh minor --skip-pages
+```
+
+### What happens step by step
+
+```mermaid
+flowchart TD
+    A[Run tests] --> B[Bump version]
+    B --> C[Build with Babel]
+    C --> D[npm publish]
+    D --> E[Clean artifacts]
+    E --> F[Git commit + tag + push]
+    F --> G[GitHub Release]
+    G --> H[webpack demo build]
+    H --> I[Deploy to gh-pages]
+```
+
+After publishing, the demo will be available at:
+`https://mdaushi.github.io/react-pivottable/`
