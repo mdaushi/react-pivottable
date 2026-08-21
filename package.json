@@ -72,6 +72,9 @@
     "build:esm": "babel src --out-dir=esm --source-maps --env-name=esm --ignore '**/__tests__/**'",
     "doPublish": "npm run build && npm publish --access public",
     "release": "bash scripts/publish.sh",
+    "release:dev": "bash scripts/publish.sh dev",
+    "release:beta": "bash scripts/publish.sh beta",
+    "release:rc": "bash scripts/publish.sh rc",
     "postpublish": "npm run clean",
     "deploy": "webpack --mode production && mv bundle.js examples && cd examples && git init && git add . && git commit -m build && git push --force git@github.com/mdaushi/react-pivottable.git master:gh-pages && rm -rf .git bundle.js"
   },
