@@ -694,6 +694,22 @@ class PivotData {
     }
   }
 
+  getAggregatorForPartialKeys(rowKey, colKey) {
+    if (rowKey.length === 0 && colKey.length === 0) {
+      return this.allTotal;
+    }
+    const criteria = {};
+    for (let i = 0; i < rowKey.length; i++) {
+      criteria[this.props.rows[i]] = rowKey[i];
+    }
+    for (let i = 0; i < colKey.length; i++) {
+      criteria[this.props.cols[i]] = colKey[i];
+    }
+    const agg = this.aggregator(this, rowKey, colKey);
+    this.forEachMatchingRecord(criteria, record => agg.push(record));
+    return agg;
+  }
+
   getAggregator(rowKey, colKey) {
     let agg;
     const flatRowKey = rowKey.join(String.fromCharCode(0));
@@ -783,6 +799,9 @@ PivotData.defaultProps = {
   rowOrder: 'key_a_to_z',
   colOrder: 'key_a_to_z',
   derivedAttributes: {},
+  grouping: false,
+  expandedRowGroups: {},
+  expandedColGroups: {},
 };
 
 PivotData.propTypes = {
@@ -798,6 +817,9 @@ PivotData.propTypes = {
     PropTypes.objectOf(PropTypes.func),
   ]),
   derivedAttributes: PropTypes.objectOf(PropTypes.func),
+  grouping: PropTypes.bool,
+  expandedRowGroups: PropTypes.objectOf(PropTypes.bool),
+  expandedColGroups: PropTypes.objectOf(PropTypes.bool),
   rowOrder: PropTypes.oneOf(['key_a_to_z', 'value_a_to_z', 'value_z_to_a']),
   colOrder: PropTypes.oneOf(['key_a_to_z', 'value_a_to_z', 'value_z_to_a']),
 };

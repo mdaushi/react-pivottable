@@ -2,45 +2,106 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import {PivotData} from './Utilities';
 
-// helper function for setting row/col-span in pivotTableRenderer
-const spanSize = function(arr, i, j) {
-  let x;
-  if (i !== 0) {
-    let asc, end;
-    let noDraw = true;
-    for (
-      x = 0, end = j, asc = end >= 0;
-      asc ? x <= end : x >= end;
-      asc ? x++ : x--
-    ) {
-      if (arr[i - 1][x] !== arr[i][x]) {
-        noDraw = false;
+// Build display items (rows or cols) considering expanded/collapsed groups.
+// When grouping is enabled, parent groups that are not expanded are collapsed
+// into a single summary item with a partial key.
+function buildDisplayItems(keys, attrs, expandedGroups, grouping) {
+  if (!grouping || attrs.length <= 1) {
+    return keys.map(key => ({key, isSummary: false}));
+  }
+
+  const displayItems = [];
+  const seenCollapsed = new Set();
+
+  for (const key of keys) {
+    let collapsedLevel = -1;
+    for (let j = 0; j < key.length - 1; j++) {
+      const flatKey = key.slice(0, j + 1).join(String.fromCharCode(0));
+      if (!(flatKey in expandedGroups)) {
+        collapsedLevel = j;
+        break;
       }
     }
-    if (noDraw) {
-      return -1;
+
+    if (collapsedLevel >= 0) {
+      const partialKey = key.slice(0, collapsedLevel + 1);
+      const flatKey = partialKey.join(String.fromCharCode(0));
+      if (!seenCollapsed.has(flatKey)) {
+        seenCollapsed.add(flatKey);
+        displayItems.push({key: partialKey, isSummary: true});
+      }
+    } else {
+      displayItems.push({key, isSummary: false});
     }
   }
-  let len = 0;
-  while (i + len < arr.length) {
-    let asc1, end1;
-    let stop = false;
-    for (
-      x = 0, end1 = j, asc1 = end1 >= 0;
-      asc1 ? x <= end1 : x >= end1;
-      asc1 ? x++ : x--
-    ) {
-      if (arr[i][x] !== arr[i + len][x]) {
-        stop = true;
+
+  return displayItems;
+}
+
+// Compute span size for display items, handling varying key lengths
+// (summary items have shorter keys than regular items).
+function displaySpanSize(displayItems, i, j) {
+  const item = displayItems[i];
+  if (j >= item.key.length) {
+    return -1;
+  }
+
+  // Check if previous item covers this cell
+  if (i > 0) {
+    const prev = displayItems[i - 1];
+    if (j < prev.key.length) {
+      let same = true;
+      for (let x = 0; x <= j; x++) {
+        if (prev.key[x] !== item.key[x]) {
+          same = false;
+          break;
+        }
+      }
+      if (same) {
+        return -1;
       }
     }
-    if (stop) {
+  }
+
+  // Count consecutive items with same value at level j
+  let len = 0;
+  while (i + len < displayItems.length) {
+    const next = displayItems[i + len];
+    if (j >= next.key.length) {
+      break;
+    }
+    let same = true;
+    for (let x = 0; x <= j; x++) {
+      if (next.key[x] !== item.key[x]) {
+        same = false;
+        break;
+      }
+    }
+    if (!same) {
       break;
     }
     len++;
   }
+
   return len;
-};
+}
+
+// Get all unique flat partial keys at a given level (0-indexed).
+// Used by the header toggle to expand/collapse all groups at that level.
+function getUniquePartialKeys(keys, level) {
+  const seen = new Set();
+  const result = [];
+  for (const key of keys) {
+    if (key.length > level) {
+      const flat = key.slice(0, level + 1).join(String.fromCharCode(0));
+      if (!seen.has(flat)) {
+        seen.add(flat);
+        result.push(flat);
+      }
+    }
+  }
+  return result;
+}
 
 function redColorScaleGenerator(values) {
   const min = Math.min.apply(Math, values);
@@ -61,6 +122,27 @@ function makeRenderer(opts = {}) {
       const rowKeys = pivotData.getRowKeys();
       const colKeys = pivotData.getColKeys();
       const grandTotalAggregator = pivotData.getAggregator([], []);
+
+      const grouping = this.props.grouping;
+      const expandedRowGroups = this.props.expandedRowGroups || {};
+      const expandedColGroups = this.props.expandedColGroups || {};
+      const onRowGroupToggle = this.props.onRowGroupToggle;
+      const onColGroupToggle = this.props.onColGroupToggle;
+      const onToggleAllRowGroups = this.props.onToggleAllRowGroups;
+      const onToggleAllColGroups = this.props.onToggleAllColGroups;
+
+      const displayRows = buildDisplayItems(
+        rowKeys,
+        rowAttrs,
+        expandedRowGroups,
+        grouping
+      );
+      const displayCols = buildDisplayItems(
+        colKeys,
+        colAttrs,
+        expandedColGroups,
+        grouping
+      );
 
       let valueCellColors = () => {};
       let rowTotalColors = () => {};
@@ -112,13 +194,13 @@ function makeRenderer(opts = {}) {
               const filters = {};
               for (const i of Object.keys(colAttrs || {})) {
                 const attr = colAttrs[i];
-                if (colValues[i] !== null) {
+                if (Number(i) < colValues.length && colValues[i] !== null) {
                   filters[attr] = colValues[i];
                 }
               }
               for (const i of Object.keys(rowAttrs || {})) {
                 const attr = rowAttrs[i];
-                if (rowValues[i] !== null) {
+                if (Number(i) < rowValues.length && rowValues[i] !== null) {
                   filters[attr] = rowValues[i];
                 }
               }
@@ -141,24 +223,63 @@ function makeRenderer(opts = {}) {
                   {j === 0 && rowAttrs.length !== 0 && (
                     <th colSpan={rowAttrs.length} rowSpan={colAttrs.length} />
                   )}
-                  <th className="pvtAxisLabel">{c}</th>
-                  {colKeys.map(function(colKey, i) {
-                    const x = spanSize(colKeys, i, j);
+                  <th className="pvtAxisLabel">
+                    {grouping &&
+                      j < colAttrs.length - 1 &&
+                      Boolean(onToggleAllColGroups) &&
+                      (() => {
+                        const allKeys = getUniquePartialKeys(colKeys, j);
+                        const allExpanded = allKeys.every(
+                          k => k in expandedColGroups
+                        );
+                        return (
+                          <span
+                            className="pvtGroupToggle"
+                            onClick={e => {
+                              e.stopPropagation();
+                              onToggleAllColGroups(allKeys, !allExpanded);
+                            }}
+                          >
+                            {allExpanded ? '▼' : '▶'}
+                          </span>
+                        );
+                      })()}
+                    {c}
+                  </th>
+                  {displayCols.map(function(col, i) {
+                    const x = displaySpanSize(displayCols, i, j);
                     if (x === -1) {
                       return null;
                     }
+                    const isLastVisible = j === col.key.length - 1;
+                    const rowSpan = isLastVisible
+                      ? colAttrs.length - j + (rowAttrs.length !== 0 ? 1 : 0)
+                      : 1;
+                    const canToggle =
+                      j < colAttrs.length - 1 && Boolean(onColGroupToggle);
+                    const flatKey = col.key
+                      .slice(0, j + 1)
+                      .join(String.fromCharCode(0));
+                    const isExpanded = flatKey in expandedColGroups;
                     return (
                       <th
                         className="pvtColLabel"
                         key={`colKey${i}`}
                         colSpan={x}
-                        rowSpan={
-                          j === colAttrs.length - 1 && rowAttrs.length !== 0
-                            ? 2
-                            : 1
-                        }
+                        rowSpan={rowSpan}
                       >
-                        {colKey[j]}
+                        {canToggle && (
+                          <span
+                            className="pvtGroupToggle"
+                            onClick={e => {
+                              e.stopPropagation();
+                              onColGroupToggle(flatKey);
+                            }}
+                          >
+                            {isExpanded ? '▼' : '▶'}
+                          </span>
+                        )}
+                        {col.key[j]}
                       </th>
                     );
                   })}
@@ -182,6 +303,26 @@ function makeRenderer(opts = {}) {
                 {rowAttrs.map(function(r, i) {
                   return (
                     <th className="pvtAxisLabel" key={`rowAttr${i}`}>
+                      {grouping &&
+                        i < rowAttrs.length - 1 &&
+                        Boolean(onToggleAllRowGroups) &&
+                        (() => {
+                          const allKeys = getUniquePartialKeys(rowKeys, i);
+                          const allExpanded = allKeys.every(
+                            k => k in expandedRowGroups
+                          );
+                          return (
+                            <span
+                              className="pvtGroupToggle"
+                              onClick={e => {
+                                e.stopPropagation();
+                                onToggleAllRowGroups(allKeys, !allExpanded);
+                              }}
+                            >
+                              {allExpanded ? '▼' : '▶'}
+                            </span>
+                          );
+                        })()}
                       {r}
                     </th>
                   );
@@ -194,43 +335,69 @@ function makeRenderer(opts = {}) {
           </thead>
 
           <tbody>
-            {rowKeys.map(function(rowKey, i) {
-              const totalAggregator = pivotData.getAggregator(rowKey, []);
+            {displayRows.map(function(displayRow, i) {
+              const rowKey = displayRow.key;
+              const totalAggregator = displayRow.isSummary
+                ? pivotData.getAggregatorForPartialKeys(rowKey, [])
+                : pivotData.getAggregator(rowKey, []);
               return (
                 <tr key={`rowKeyRow${i}`}>
-                  {rowKey.map(function(txt, j) {
-                    const x = spanSize(rowKeys, i, j);
+                  {rowAttrs.map(function(r, j) {
+                    if (j >= rowKey.length) {
+                      return null;
+                    }
+                    const x = displaySpanSize(displayRows, i, j);
                     if (x === -1) {
                       return null;
                     }
+                    const isLastVisible = j === rowKey.length - 1;
+                    const colSpan = isLastVisible
+                      ? rowAttrs.length - j + (colAttrs.length !== 0 ? 1 : 0)
+                      : 1;
+                    const canToggle =
+                      j < rowAttrs.length - 1 && Boolean(onRowGroupToggle);
+                    const flatKey = rowKey
+                      .slice(0, j + 1)
+                      .join(String.fromCharCode(0));
+                    const isExpanded = flatKey in expandedRowGroups;
                     return (
                       <th
                         key={`rowKeyLabel${i}-${j}`}
                         className="pvtRowLabel"
                         rowSpan={x}
-                        colSpan={
-                          j === rowAttrs.length - 1 && colAttrs.length !== 0
-                            ? 2
-                            : 1
-                        }
+                        colSpan={colSpan}
                       >
-                        {txt}
+                        {canToggle && (
+                          <span
+                            className="pvtGroupToggle"
+                            onClick={e => {
+                              e.stopPropagation();
+                              onRowGroupToggle(flatKey);
+                            }}
+                          >
+                            {isExpanded ? '▼' : '▶'}
+                          </span>
+                        )}
+                        {rowKey[j]}
                       </th>
                     );
                   })}
-                  {colKeys.map(function(colKey, j) {
-                    const aggregator = pivotData.getAggregator(rowKey, colKey);
+                  {displayCols.map(function(col, j) {
+                    const aggregator =
+                      displayRow.isSummary || col.isSummary
+                        ? pivotData.getAggregatorForPartialKeys(rowKey, col.key)
+                        : pivotData.getAggregator(rowKey, col.key);
                     return (
                       <td
                         className="pvtVal"
                         key={`pvtVal${i}-${j}`}
                         onClick={
                           getClickHandler &&
-                          getClickHandler(aggregator.value(), rowKey, colKey)
+                          getClickHandler(aggregator.value(), rowKey, col.key)
                         }
                         style={valueCellColors(
                           rowKey,
-                          colKey,
+                          col.key,
                           aggregator.value()
                         )}
                       >
@@ -260,15 +427,17 @@ function makeRenderer(opts = {}) {
                 Totals
               </th>
 
-              {colKeys.map(function(colKey, i) {
-                const totalAggregator = pivotData.getAggregator([], colKey);
+              {displayCols.map(function(col, i) {
+                const totalAggregator = col.isSummary
+                  ? pivotData.getAggregatorForPartialKeys([], col.key)
+                  : pivotData.getAggregator([], col.key);
                 return (
                   <td
                     className="pvtTotal"
                     key={`total${i}`}
                     onClick={
                       getClickHandler &&
-                      getClickHandler(totalAggregator.value(), [null], colKey)
+                      getClickHandler(totalAggregator.value(), [null], col.key)
                     }
                     style={rowTotalColors(totalAggregator.value())}
                   >
@@ -299,6 +468,10 @@ function makeRenderer(opts = {}) {
   TableRenderer.defaultProps.tableOptions = {};
   TableRenderer.propTypes.tableColorScaleGenerator = PropTypes.func;
   TableRenderer.propTypes.tableOptions = PropTypes.object;
+  TableRenderer.propTypes.onRowGroupToggle = PropTypes.func;
+  TableRenderer.propTypes.onColGroupToggle = PropTypes.func;
+  TableRenderer.propTypes.onToggleAllRowGroups = PropTypes.func;
+  TableRenderer.propTypes.onToggleAllColGroups = PropTypes.func;
   return TableRenderer;
 }
 

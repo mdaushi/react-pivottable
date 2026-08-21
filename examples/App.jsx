@@ -49,6 +49,7 @@ export default class App extends React.Component {
                 aggregatorName: 'Sum over Sum',
                 vals: ['Tip', 'Total Bill'],
                 rendererName: 'Grouped Column Chart',
+                grouping: true,
                 sorters: {
                     Meal: sortAs(['Lunch', 'Dinner']),
                     'Day of Week': sortAs([

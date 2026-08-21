@@ -328,6 +328,50 @@ class PivotTableUI extends React.PureComponent {
     });
   }
 
+  toggleRowGroup(flatKey) {
+    const expanded = Object.assign({}, this.props.expandedRowGroups || {});
+    if (flatKey in expanded) {
+      delete expanded[flatKey];
+    } else {
+      expanded[flatKey] = true;
+    }
+    this.sendPropUpdate({expandedRowGroups: {$set: expanded}});
+  }
+
+  toggleColGroup(flatKey) {
+    const expanded = Object.assign({}, this.props.expandedColGroups || {});
+    if (flatKey in expanded) {
+      delete expanded[flatKey];
+    } else {
+      expanded[flatKey] = true;
+    }
+    this.sendPropUpdate({expandedColGroups: {$set: expanded}});
+  }
+
+  toggleAllRowGroups(flatKeys, expand) {
+    const expanded = Object.assign({}, this.props.expandedRowGroups || {});
+    for (const k of flatKeys) {
+      if (expand) {
+        expanded[k] = true;
+      } else {
+        delete expanded[k];
+      }
+    }
+    this.sendPropUpdate({expandedRowGroups: {$set: expanded}});
+  }
+
+  toggleAllColGroups(flatKeys, expand) {
+    const expanded = Object.assign({}, this.props.expandedColGroups || {});
+    for (const k of flatKeys) {
+      if (expand) {
+        expanded[k] = true;
+      } else {
+        delete expanded[k];
+      }
+    }
+    this.sendPropUpdate({expandedColGroups: {$set: expanded}});
+  }
+
   moveFilterBoxToTop(attribute) {
     this.setState(
       update(this.state, {
@@ -526,6 +570,14 @@ class PivotTableUI extends React.PureComponent {
         <PivotTable
           {...update(this.props, {
             data: {$set: this.state.materializedInput},
+            onRowGroupToggle: {$set: this.toggleRowGroup.bind(this)},
+            onColGroupToggle: {$set: this.toggleColGroup.bind(this)},
+            onToggleAllRowGroups: {
+              $set: this.toggleAllRowGroups.bind(this),
+            },
+            onToggleAllColGroups: {
+              $set: this.toggleAllColGroups.bind(this),
+            },
           })}
         />
       </td>

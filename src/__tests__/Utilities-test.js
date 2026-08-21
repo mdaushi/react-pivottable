@@ -19,7 +19,11 @@ const fixtureData = [
 describe('  utils', function() {
   describe('.PivotData()', function() {
     describe('with no options', function() {
-      const aoaInput = [['a', 'b'], [1, 2], [3, 4]];
+      const aoaInput = [
+        ['a', 'b'],
+        [1, 2],
+        [3, 4],
+      ];
       const pd = new utils.PivotData({data: aoaInput});
 
       it('has the correct grand total value', () =>
@@ -27,7 +31,11 @@ describe('  utils', function() {
     });
 
     describe('with array-of-array input', function() {
-      const aoaInput = [['a', 'b'], [1, 2], [3, 4]];
+      const aoaInput = [
+        ['a', 'b'],
+        [1, 2],
+        [3, 4],
+      ];
       const pd = new utils.PivotData({
         data: aoaInput,
         aggregatorName: 'Sum over Sum',
@@ -39,7 +47,10 @@ describe('  utils', function() {
     });
 
     describe('with array-of-object input', function() {
-      const aosInput = [{a: 1, b: 2}, {a: 3, b: 4}];
+      const aosInput = [
+        {a: 1, b: 2},
+        {a: 3, b: 4},
+      ];
       const pd = new utils.PivotData({
         data: aosInput,
         aggregatorName: 'Sum over Sum',
@@ -134,6 +145,48 @@ describe('  utils', function() {
         const val = agg.value();
         expect(val).toBe(4);
         expect(agg.format(val)).toBe('4');
+      });
+    });
+
+    describe('getAggregatorForPartialKeys()', function() {
+      const pd = new utils.PivotData({
+        data: fixtureData,
+        rows: ['gender', 'name'],
+        cols: ['colour'],
+      });
+
+      it('returns allTotal for empty keys', () =>
+        expect(pd.getAggregatorForPartialKeys([], []).value()).toBe(4));
+
+      it('aggregates partial row key across children', () => {
+        const agg = pd.getAggregatorForPartialKeys(['male'], []);
+        expect(agg.value()).toBe(2);
+      });
+
+      it('aggregates partial row key with full col key', () => {
+        const agg = pd.getAggregatorForPartialKeys(['male'], ['blue']);
+        expect(agg.value()).toBe(2);
+      });
+
+      it('aggregates partial row key with no matching col key', () => {
+        const agg = pd.getAggregatorForPartialKeys(['male'], ['red']);
+        expect(agg.value()).toBe(0);
+      });
+
+      it('aggregates full row key with partial col key', () => {
+        const agg = pd.getAggregatorForPartialKeys(['male', 'Nick'], []);
+        expect(agg.value()).toBe(1);
+      });
+
+      it('respects valueFilter', () => {
+        const pdFiltered = new utils.PivotData({
+          data: fixtureData,
+          rows: ['gender', 'name'],
+          cols: ['colour'],
+          valueFilter: {gender: {female: true}},
+        });
+        const agg = pdFiltered.getAggregatorForPartialKeys(['male'], []);
+        expect(agg.value()).toBe(2);
       });
     });
   });
