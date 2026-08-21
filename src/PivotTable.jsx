@@ -27,4 +27,5 @@ PivotTable.defaultProps = Object.assign({}, PivotData.defaultProps, {
   renderers: TableRenderers,
 });
 
+export {PivotTable};
 export default PivotTable;

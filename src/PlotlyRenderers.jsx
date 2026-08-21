@@ -197,7 +197,7 @@ function makeScatterRenderer(PlotlyComponent) {
   return Renderer;
 }
 
-export default function createPlotlyRenderers(PlotlyComponent) {
+function createPlotlyRenderers(PlotlyComponent) {
   return {
     'Grouped Column Chart': makeRenderer(
       PlotlyComponent,
@@ -233,3 +233,6 @@ export default function createPlotlyRenderers(PlotlyComponent) {
     ),
   };
 }
+
+export {createPlotlyRenderers};
+export default createPlotlyRenderers;
