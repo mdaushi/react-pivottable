@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [16, 18, 20]
+        node-version: [18, 20, 22]
 
     steps:
       - uses: actions/checkout@v4
@@ -20,9 +20,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: npm
 
-      - run: npm ci
+      - run: npm install
 
       - name: ESLint
         run: npx eslint src/*.js*
@@ -35,3 +34,6 @@ jobs:
 
       - name: TypeScript check
         run: npx tsc --noEmit
+
+      - name: Build
+        run: npm run build

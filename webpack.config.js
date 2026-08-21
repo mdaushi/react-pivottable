@@ -12,15 +12,18 @@ module.exports = {
   module : {
     rules: [
       {
-        test: /\.jsx?$/,
+        test: /\.m?jsx?$/,
         use: {
           loader: 'babel-loader',
           options: {
             "presets" : [["env", {"modules": false}], "react"],
-            "plugins": ["react-hot-loader/babel"]
+            "plugins": [
+              "react-hot-loader/babel",
+              "transform-object-rest-spread"
+            ]
           }
         },
-        exclude: /node_modules/,
+        exclude: /node_modules\/(?!(react-draggable|sortablejs|react-sortablejs)).*/
       },
       {
         test: /\.css$/,
@@ -37,6 +40,6 @@ module.exports = {
       hot: true
     },
   resolve: {
-    extensions: ['.js', '.jsx'],
+    extensions: ['.js', '.jsx', '.mjs', '.mjsx'],
   },
 };
