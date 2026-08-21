@@ -432,7 +432,58 @@ const data = function(callback) {
 
 ## Publishing & Releasing
 
-The `scripts/publish.sh` script automates the full release workflow:
+There are two ways to release: **GitHub Actions** (recommended, automated) or
+the **local script** (manual, interactive).
+
+### GitHub Actions (recommended)
+
+Three workflows run automatically from `.github/workflows/`:
+
+| Workflow | Trigger | What it does |
+|----------|---------|--------------|
+| **CI** | push/PR to `master` | Runs ESLint, Prettier, Jest, and `tsc` on Node 16/18/20 |
+| **Release** | push tag `v*` | Tests, builds, publishes to npm, creates GitHub Release |
+| **Deploy Pages** | push to `master` | Builds demo with webpack, deploys to GitHub Pages |
+
+#### One-time setup
+
+1. **npm token** — Create an access token at
+   https://www.npmjs.com/settings/\<username\>/tokens (type: **Automation**)
+2. **Add secret** — Go to repo Settings \> Secrets and variables \> Actions \>
+   New repository secret:
+   - Name: `NPM_TOKEN`
+   - Value: your npm token
+3. **Pages config** — Go to repo Settings \> Pages \> Source: **GitHub Actions**
+
+#### How to release
+
+```sh
+# 1. Bump version
+npm version patch   # or minor / major
+
+# 2. Commit and push the tag
+git push origin master --tags
+```
+
+The `Release` workflow triggers automatically on the `v*` tag push:
+
+```mermaid
+flowchart TD
+    A[git push --tags] --> B[Release workflow]
+    B --> C[Run tests]
+    C --> D[npm publish]
+    D --> E[GitHub Release]
+    B --> F[Deploy Pages workflow]
+    F --> G[webpack build]
+    G --> H[Deploy to GitHub Pages]
+```
+
+After release, the demo is live at:
+`https://mdaushi.github.io/react-pivottable/`
+
+### Local script (alternative)
+
+The `scripts/publish.sh` script does the same thing locally in one command:
 
 1. Run tests (eslint + prettier + jest)
 2. Bump version (`patch` / `minor` / `major` / custom)

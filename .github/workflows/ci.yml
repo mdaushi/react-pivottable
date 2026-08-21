@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [16, 18, 20]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npx eslint src/*.js*
+
+      - name: Prettier
+        run: npx prettier -l "src/*.js*"
+
+      - name: Jest
+        run: npx jest --no-coverage
+
+      - name: TypeScript check
+        run: npx tsc --noEmit
