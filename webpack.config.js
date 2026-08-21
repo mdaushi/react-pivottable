@@ -1,45 +1,46 @@
-var webpack = require('webpack');
+const webpack = require('webpack');
+const ReactRefreshPlugin = require('@pmmmwh/react-refresh-webpack-plugin');
 
 module.exports = {
+  mode: 'development',
   entry: [
-    'babel-polyfill',
-    'react-hot-loader/patch',
-    './examples/index.jsx'
+    './examples/index.jsx',
   ],
   output: {
-    filename: 'bundle.js'
+    filename: 'bundle.js',
+    path: __dirname,
   },
-  module : {
+  module: {
     rules: [
       {
         test: /\.m?jsx?$/,
+        exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
           options: {
-            "presets" : [["env", {"modules": false}], "react"],
-            "plugins": [
-              "react-hot-loader/babel",
-              "transform-object-rest-spread"
-            ]
-          }
+            presets: [
+              ['@babel/preset-env', {modules: false}],
+              '@babel/preset-react',
+            ],
+            plugins: [
+              'react-refresh/babel',
+            ],
+          },
         },
-        exclude: /node_modules\/(?!(react-draggable|sortablejs|react-sortablejs)).*/
       },
       {
         test: /\.css$/,
-        use: [ 'style-loader', 'css-loader' ]
-      }
-    ]
+        use: ['style-loader', 'css-loader'],
+      },
+    ],
   },
-  plugins: [
-    new webpack.NamedModulesPlugin(),
-    new webpack.HotModuleReplacementPlugin()
-  ],
-  devServer: {
-      contentBase: './examples',
-      hot: true
-    },
   resolve: {
     extensions: ['.js', '.jsx', '.mjs', '.mjsx'],
+  },
+  plugins: [new ReactRefreshPlugin()],
+  devServer: {
+    static: './examples',
+    hot: true,
+    port: 8080,
   },
 };

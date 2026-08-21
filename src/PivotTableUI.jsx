@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import update from 'immutability-helper';
 import {PivotData, sortAs, getSort} from './Utilities';
 import PivotTable from './PivotTable';
-import Sortable from 'react-sortablejs';
+import {ReactSortable} from 'react-sortablejs';
 import Draggable from 'react-draggable';
 
 /* eslint-disable react/prop-types */
@@ -35,7 +35,7 @@ export class DraggableAttribute extends React.Component {
     e.stopPropagation();
     this.props.setValuesInFilter(
       this.props.name,
-      Object.keys(this.props.attrValues).filter(y => y !== value)
+      Object.keys(this.props.attrValues).filter((y) => y !== value)
     );
   }
 
@@ -75,7 +75,7 @@ export class DraggableAttribute extends React.Component {
                 placeholder="Filter values"
                 className="pvtSearch"
                 value={this.state.filterText}
-                onChange={e =>
+                onChange={(e) =>
                   this.setState({
                     filterText: e.target.value,
                   })
@@ -115,13 +115,13 @@ export class DraggableAttribute extends React.Component {
 
           {showMenu && (
             <div className="pvtCheckContainer">
-              {shown.map(x => (
+              {shown.map((x) => (
                 <p
                   key={x}
                   onClick={() => this.toggleValue(x)}
                   className={x in this.props.valueFilter ? '' : 'selected'}
                 >
-                  <a className="pvtOnly" onClick={e => this.selectOnly(e, x)}>
+                  <a className="pvtOnly" onClick={(e) => this.selectOnly(e, x)}>
                     only
                   </a>
                   <a className="pvtOnlySpacer">&nbsp;</a>
@@ -186,7 +186,7 @@ export class Dropdown extends React.PureComponent {
     return (
       <div className="pvtDropdown" style={{zIndex: this.props.zIndex}}>
         <div
-          onClick={e => {
+          onClick={(e) => {
             e.stopPropagation();
             this.props.toggle();
           }}
@@ -202,11 +202,11 @@ export class Dropdown extends React.PureComponent {
 
         {this.props.open && (
           <div className="pvtDropdownMenu">
-            {this.props.values.map(r => (
+            {this.props.values.map((r) => (
               <div
                 key={r}
                 role="button"
-                onClick={e => {
+                onClick={(e) => {
                   e.stopPropagation();
                   if (this.props.current === r) {
                     this.props.toggle();
@@ -263,7 +263,7 @@ class PivotTableUI extends React.PureComponent {
     PivotData.forEachRecord(
       newState.data,
       this.props.derivedAttributes,
-      function(record) {
+      function (record) {
         newState.materializedInput.push(record);
         for (const attr of Object.keys(record)) {
           if (!(attr in newState.attrValues)) {
@@ -291,7 +291,7 @@ class PivotTableUI extends React.PureComponent {
   }
 
   propUpdater(key) {
-    return value => this.sendPropUpdate({[key]: {$set: value}});
+    return (value) => this.sendPropUpdate({[key]: {$set: value}});
   }
 
   setValuesInFilter(attribute, values) {
@@ -387,18 +387,17 @@ class PivotTableUI extends React.PureComponent {
 
   makeDnDCell(items, onChange, classes) {
     return (
-      <Sortable
-        options={{
-          group: 'shared',
-          ghostClass: 'pvtPlaceholder',
-          filter: '.pvtFilterBox',
-          preventOnFilter: false,
-        }}
+      <ReactSortable
+        list={items.map((x) => ({id: x}))}
+        setList={(newList) => onChange(newList.map((item) => item.id))}
+        group="shared"
+        ghostClass="pvtPlaceholder"
+        filter=".pvtFilterBox"
+        preventOnFilter={false}
         tag="td"
         className={classes}
-        onChange={onChange}
       >
-        {items.map(x => (
+        {items.map((x) => (
           <DraggableAttribute
             name={x}
             key={x}
@@ -413,7 +412,7 @@ class PivotTableUI extends React.PureComponent {
             zIndex={this.state.zIndices[x] || this.state.maxZIndex}
           />
         ))}
-      </Sortable>
+      </ReactSortable>
     );
   }
 
@@ -499,7 +498,7 @@ class PivotTableUI extends React.PureComponent {
             key={i}
             current={this.props.vals[i]}
             values={Object.keys(this.state.attrValues).filter(
-              e =>
+              (e) =>
                 !this.props.hiddenAttributes.includes(e) &&
                 !this.props.hiddenFromAggregators.includes(e)
             )}
@@ -510,7 +509,7 @@ class PivotTableUI extends React.PureComponent {
                 openDropdown: this.isOpen(`val${i}`) ? false : `val${i}`,
               })
             }
-            setValue={value =>
+            setValue={(value) =>
               this.sendPropUpdate({
                 vals: {$splice: [[i, 1, value]]},
               })
@@ -524,7 +523,7 @@ class PivotTableUI extends React.PureComponent {
 
     const unusedAttrs = Object.keys(this.state.attrValues)
       .filter(
-        e =>
+        (e) =>
           !this.props.rows.includes(e) &&
           !this.props.cols.includes(e) &&
           !this.props.hiddenAttributes.includes(e) &&
@@ -537,14 +536,14 @@ class PivotTableUI extends React.PureComponent {
 
     const unusedAttrsCell = this.makeDnDCell(
       unusedAttrs,
-      order => this.setState({unusedOrder: order}),
+      (order) => this.setState({unusedOrder: order}),
       `pvtAxisContainer pvtUnused ${
         horizUnused ? 'pvtHorizList' : 'pvtVertList'
       }`
     );
 
     const colAttrs = this.props.cols.filter(
-      e =>
+      (e) =>
         !this.props.hiddenAttributes.includes(e) &&
         !this.props.hiddenFromDragDrop.includes(e)
     );
@@ -556,7 +555,7 @@ class PivotTableUI extends React.PureComponent {
     );
 
     const rowAttrs = this.props.rows.filter(
-      e =>
+      (e) =>
         !this.props.hiddenAttributes.includes(e) &&
         !this.props.hiddenFromDragDrop.includes(e)
     );
@@ -639,5 +638,22 @@ PivotTableUI.defaultProps = Object.assign({}, PivotTable.defaultProps, {
   unusedOrientationCutoff: 85,
   menuLimit: 500,
 });
+
+// Re-export submodules so consumers can import everything from the main entry:
+//   import PivotTableUI, {PivotTable, TableRenderers, sortAs} from '@mdaushi/react-pivottable';
+export {PivotTable} from './PivotTable';
+export {default as TableRenderers} from './TableRenderers';
+export {createPlotlyRenderers} from './PlotlyRenderers';
+export {
+  PivotData,
+  sortAs,
+  getSort,
+  derivers,
+  aggregatorTemplates,
+  aggregators,
+  numberFormat,
+  naturalSort,
+  locales,
+} from './Utilities';
 
 export default PivotTableUI;

@@ -1,8 +1,8 @@
 // Type definitions for TableRenderers module of @mdaushi/react-pivottable
 
 import React from 'react';
-import {PivotTableProps, PivotData} from './PivotTable';
-import './Utilities';
+import {PivotTableProps} from './PivotTable';
+import {PivotData} from './Utilities';
 
 export interface DisplayItem {
   key: (string | number)[];

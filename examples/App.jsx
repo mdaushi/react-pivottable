@@ -17,8 +17,10 @@ class PivotTableUISmartWrapper extends React.PureComponent {
     this.state = {pivotState: props};
   }
 
-  componentWillReceiveProps(nextProps) {
-    this.setState({pivotState: nextProps});
+  componentDidUpdate(prevProps) {
+    if (prevProps !== this.props) {
+      this.setState({pivotState: this.props});
+    }
   }
 
   render() {
@@ -30,7 +32,7 @@ class PivotTableUISmartWrapper extends React.PureComponent {
           createPlotlyRenderers(Plot)
         )}
         {...this.state.pivotState}
-        onChange={s => this.setState({pivotState: s})}
+        onChange={(s) => this.setState({pivotState: s})}
         unusedOrientationCutoff={Infinity}
       />
     );
@@ -38,8 +40,9 @@ class PivotTableUISmartWrapper extends React.PureComponent {
 }
 
 export default class App extends React.Component {
-  componentWillMount() {
-    this.setState({
+  constructor(props) {
+    super(props);
+    this.state = {
       mode: 'demo',
       filename: 'Sample Dataset: Tips',
       pivotState: {
@@ -51,7 +54,7 @@ export default class App extends React.Component {
         rendererName: 'Table',
         grouping: true,
         subtotals: true,
-        subtotalLabel: value => value + ' Total',
+        subtotalLabel: (value) => value + ' Total',
         sorters: {
           Meal: sortAs(['Lunch', 'Dinner']),
           'Day of Week': sortAs(['Thursday', 'Friday', 'Saturday', 'Sunday']),
@@ -59,16 +62,16 @@ export default class App extends React.Component {
         plotlyOptions: {width: 900, height: 500},
         plotlyConfig: {},
         tableOptions: {
-          clickCallback: function(e, value, filters, pivotData) {
+          clickCallback: function (e, value, filters, pivotData) {
             var names = [];
-            pivotData.forEachMatchingRecord(filters, function(record) {
+            pivotData.forEachMatchingRecord(filters, function (record) {
               names.push(record.Meal);
             });
             alert(names.join('\n'));
           },
         },
       },
-    });
+    };
   }
 
   onDrop(files) {
@@ -82,8 +85,8 @@ export default class App extends React.Component {
       () =>
         Papa.parse(files[0], {
           skipEmptyLines: true,
-          error: e => alert(e),
-          complete: parsed =>
+          error: (e) => alert(e),
+          complete: (parsed) =>
             this.setState({
               mode: 'file',
               filename: files[0].name,
@@ -96,8 +99,8 @@ export default class App extends React.Component {
   onType(event) {
     Papa.parse(event.target.value, {
       skipEmptyLines: true,
-      error: e => alert(e),
-      complete: parsed =>
+      error: (e) => alert(e),
+      complete: (parsed) =>
         this.setState({
           mode: 'text',
           filename: 'Data from <textarea>',
@@ -115,15 +118,23 @@ export default class App extends React.Component {
             <p>Try it right now on a file...</p>
             <Dropzone
               onDrop={this.onDrop.bind(this)}
-              accept="text/csv"
-              className="dropzone"
-              activeClassName="dropzoneActive"
-              rejectClassName="dropzoneReject"
+              accept={{'text/csv': ['.csv']}}
             >
-              <p>
-                Drop a CSV file here, or click to choose a file from your
-                computer.
-              </p>
+              {({getRootProps, getInputProps, isDragActive, isDragReject}) => (
+                <div
+                  {...getRootProps({
+                    className: `dropzone ${
+                      isDragActive ? 'dropzoneActive' : ''
+                    } ${isDragReject ? 'dropzoneReject' : ''}`,
+                  })}
+                >
+                  <input {...getInputProps()} />
+                  <p>
+                    Drop a CSV file here, or click to choose a file from your
+                    computer.
+                  </p>
+                </div>
+              )}
             </Dropzone>
           </div>
           <div className="col-md-3 text-center">

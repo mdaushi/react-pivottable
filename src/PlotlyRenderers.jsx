@@ -32,7 +32,7 @@ function makeRenderer(
         fullAggName += ` of ${this.props.vals.slice(0, numInputs).join(', ')}`;
       }
 
-      const data = traceKeys.map(traceKey => {
+      const data = traceKeys.map((traceKey) => {
         const values = [];
         const labels = [];
         for (const datumKey of datumKeys) {
@@ -151,8 +151,8 @@ function makeScatterRenderer(PlotlyComponent) {
 
       const data = {x: [], y: [], text: [], type: 'scatter', mode: 'markers'};
 
-      rowKeys.map(rowKey => {
-        colKeys.map(colKey => {
+      rowKeys.map((rowKey) => {
+        colKeys.map((colKey) => {
           const v = pivotData.getAggregator(rowKey, colKey).value();
           if (v !== null) {
             data.x.push(colKey.join('-'));

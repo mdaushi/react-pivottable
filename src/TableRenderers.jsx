@@ -14,7 +14,7 @@ function buildDisplayItems(
   showSubtotals
 ) {
   if (!grouping || attrs.length <= 1) {
-    return keys.map(key => ({key, isSummary: false, isSubtotal: false}));
+    return keys.map((key) => ({key, isSummary: false, isSubtotal: false}));
   }
 
   const displayItems = [];
@@ -175,7 +175,7 @@ function getUniquePartialKeys(keys, level) {
 function redColorScaleGenerator(values) {
   const min = Math.min.apply(Math, values);
   const max = Math.max.apply(Math, values);
-  return x => {
+  return (x) => {
     // eslint-disable-next-line no-magic-numbers
     const nonRed = 255 - Math.round((255 * (x - min)) / (max - min));
     return {backgroundColor: `rgb(255,${nonRed},${nonRed})`};
@@ -222,19 +222,19 @@ function makeRenderer(opts = {}) {
       let colTotalColors = () => {};
       if (opts.heatmapMode) {
         const colorScaleGenerator = this.props.tableColorScaleGenerator;
-        const rowTotalValues = colKeys.map(x =>
+        const rowTotalValues = colKeys.map((x) =>
           pivotData.getAggregator([], x).value()
         );
         rowTotalColors = colorScaleGenerator(rowTotalValues);
-        const colTotalValues = rowKeys.map(x =>
+        const colTotalValues = rowKeys.map((x) =>
           pivotData.getAggregator(x, []).value()
         );
         colTotalColors = colorScaleGenerator(colTotalValues);
 
         if (opts.heatmapMode === 'full') {
           const allValues = [];
-          rowKeys.map(r =>
-            colKeys.map(c =>
+          rowKeys.map((r) =>
+            colKeys.map((c) =>
               allValues.push(pivotData.getAggregator(r, c).value())
             )
           );
@@ -242,8 +242,8 @@ function makeRenderer(opts = {}) {
           valueCellColors = (r, c, v) => colorScale(v);
         } else if (opts.heatmapMode === 'row') {
           const rowColorScales = {};
-          rowKeys.map(r => {
-            const rowValues = colKeys.map(x =>
+          rowKeys.map((r) => {
+            const rowValues = colKeys.map((x) =>
               pivotData.getAggregator(r, x).value()
             );
             rowColorScales[r] = colorScaleGenerator(rowValues);
@@ -251,8 +251,8 @@ function makeRenderer(opts = {}) {
           valueCellColors = (r, c, v) => rowColorScales[r](v);
         } else if (opts.heatmapMode === 'col') {
           const colColorScales = {};
-          colKeys.map(c => {
-            const colValues = rowKeys.map(x =>
+          colKeys.map((c) => {
+            const colValues = rowKeys.map((x) =>
               pivotData.getAggregator(x, c).value()
             );
             colColorScales[c] = colorScaleGenerator(colValues);
@@ -277,7 +277,7 @@ function makeRenderer(opts = {}) {
                   filters[attr] = rowValues[i];
                 }
               }
-              return e =>
+              return (e) =>
                 this.props.tableOptions.clickCallback(
                   e,
                   value,
@@ -290,7 +290,7 @@ function makeRenderer(opts = {}) {
       return (
         <table className="pvtTable">
           <thead>
-            {colAttrs.map(function(c, j) {
+            {colAttrs.map(function (c, j) {
               return (
                 <tr key={`colAttr${j}`}>
                   {j === 0 && rowAttrs.length !== 0 && (
@@ -303,12 +303,12 @@ function makeRenderer(opts = {}) {
                       (() => {
                         const allKeys = getUniquePartialKeys(colKeys, j);
                         const allExpanded = allKeys.every(
-                          k => k in expandedColGroups
+                          (k) => k in expandedColGroups
                         );
                         return (
                           <span
                             className="pvtGroupToggle"
-                            onClick={e => {
+                            onClick={(e) => {
                               e.stopPropagation();
                               onToggleAllColGroups(allKeys, !allExpanded);
                             }}
@@ -319,7 +319,7 @@ function makeRenderer(opts = {}) {
                       })()}
                     {c}
                   </th>
-                  {displayCols.map(function(col, i) {
+                  {displayCols.map(function (col, i) {
                     const x = displaySpanSize(displayCols, i, j);
                     if (x === -1) {
                       return null;
@@ -350,7 +350,7 @@ function makeRenderer(opts = {}) {
                         {canToggle && (
                           <span
                             className="pvtGroupToggle"
-                            onClick={e => {
+                            onClick={(e) => {
                               e.stopPropagation();
                               onColGroupToggle(flatKey);
                             }}
@@ -383,7 +383,7 @@ function makeRenderer(opts = {}) {
 
             {rowAttrs.length !== 0 && (
               <tr>
-                {rowAttrs.map(function(r, i) {
+                {rowAttrs.map(function (r, i) {
                   return (
                     <th className="pvtAxisLabel" key={`rowAttr${i}`}>
                       {grouping &&
@@ -392,12 +392,12 @@ function makeRenderer(opts = {}) {
                         (() => {
                           const allKeys = getUniquePartialKeys(rowKeys, i);
                           const allExpanded = allKeys.every(
-                            k => k in expandedRowGroups
+                            (k) => k in expandedRowGroups
                           );
                           return (
                             <span
                               className="pvtGroupToggle"
-                              onClick={e => {
+                              onClick={(e) => {
                                 e.stopPropagation();
                                 onToggleAllRowGroups(allKeys, !allExpanded);
                               }}
@@ -418,7 +418,7 @@ function makeRenderer(opts = {}) {
           </thead>
 
           <tbody>
-            {displayRows.map(function(displayRow, i) {
+            {displayRows.map(function (displayRow, i) {
               const rowKey = displayRow.key;
               const totalAggregator =
                 displayRow.isSummary || displayRow.isSubtotal
@@ -426,7 +426,7 @@ function makeRenderer(opts = {}) {
                   : pivotData.getAggregator(rowKey, []);
               return (
                 <tr key={`rowKeyRow${i}`}>
-                  {rowAttrs.map(function(r, j) {
+                  {rowAttrs.map(function (r, j) {
                     if (j >= rowKey.length) {
                       return null;
                     }
@@ -461,7 +461,7 @@ function makeRenderer(opts = {}) {
                         {canToggle && (
                           <span
                             className="pvtGroupToggle"
-                            onClick={e => {
+                            onClick={(e) => {
                               e.stopPropagation();
                               onRowGroupToggle(flatKey);
                             }}
@@ -477,7 +477,7 @@ function makeRenderer(opts = {}) {
                       </th>
                     );
                   })}
-                  {displayCols.map(function(col, j) {
+                  {displayCols.map(function (col, j) {
                     const aggregator =
                       displayRow.isSummary ||
                       col.isSummary ||
@@ -532,7 +532,7 @@ function makeRenderer(opts = {}) {
                 Totals
               </th>
 
-              {displayCols.map(function(col, i) {
+              {displayCols.map(function (col, i) {
                 const totalAggregator =
                   col.isSummary || col.isSubtotal
                     ? pivotData.getAggregatorForPartialKeys([], col.key)
@@ -595,16 +595,16 @@ class TSVExportRenderer extends React.PureComponent {
       colKeys.push([]);
     }
 
-    const headerRow = pivotData.props.rows.map(r => r);
+    const headerRow = pivotData.props.rows.map((r) => r);
     if (colKeys.length === 1 && colKeys[0].length === 0) {
       headerRow.push(this.props.aggregatorName);
     } else {
-      colKeys.map(c => headerRow.push(c.join('-')));
+      colKeys.map((c) => headerRow.push(c.join('-')));
     }
 
-    const result = rowKeys.map(r => {
-      const row = r.map(x => x);
-      colKeys.map(c => {
+    const result = rowKeys.map((r) => {
+      const row = r.map((x) => x);
+      colKeys.map((c) => {
         const v = pivotData.getAggregator(r, c).value();
         row.push(v ? v : '');
       });
@@ -615,7 +615,7 @@ class TSVExportRenderer extends React.PureComponent {
 
     return (
       <textarea
-        value={result.map(r => r.join('\t')).join('\n')}
+        value={result.map((r) => r.join('\t')).join('\n')}
         style={{width: window.innerWidth / 2, height: window.innerHeight / 2}}
         readOnly={true}
       />
